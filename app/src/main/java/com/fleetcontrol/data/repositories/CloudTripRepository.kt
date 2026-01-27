@@ -143,13 +143,13 @@ class CloudTripRepository @Inject constructor() {
         }
         
         val listener = tripsRef()
-            
             .whereEqualTo("driverId", driverId)
             .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .limit(50)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    close(e)
+                    android.util.Log.e("CloudTripRepo", "Error fetching driver trips", e)
+                    // Don't crash, just log. Most likely index error or permission.
                     return@addSnapshotListener
                 }
                 
@@ -186,12 +186,11 @@ class CloudTripRepository @Inject constructor() {
         }
 
         val listener = statsRef()
-            
             .whereEqualTo("year", year)
             .whereEqualTo("month", month)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    close(e)
+                    android.util.Log.e("CloudTripRepo", "Error fetching driver stats", e)
                     return@addSnapshotListener
                 }
                 val stats = snapshot?.toObjects(DriverStats::class.java) ?: emptyList()
@@ -216,11 +215,10 @@ class CloudTripRepository @Inject constructor() {
         val startOfToday = com.fleetcontrol.utils.DateUtils.getStartOfToday()
         
         val listener = tripsRef()
-            
             .whereGreaterThanOrEqualTo("timestamp", startOfToday)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    close(e)
+                    android.util.Log.e("CloudTripRepo", "Error fetching today trip count", e)
                     return@addSnapshotListener
                 }
                 trySend(snapshot?.size() ?: 0)
@@ -242,12 +240,11 @@ class CloudTripRepository @Inject constructor() {
             return@callbackFlow
         }
         val listener = tripsRef()
-            
             .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .limit(2000)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    close(e)
+                    android.util.Log.e("CloudTripRepo", "Error fetching all trips", e)
                     return@addSnapshotListener
                 }
                 val trips = snapshot?.toObjects(FirestoreTrip::class.java) ?: emptyList()
@@ -275,7 +272,7 @@ class CloudTripRepository @Inject constructor() {
             .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    close(e)
+                    android.util.Log.e("CloudTripRepo", "Error fetching pending trips. MISSING INDEX? Check log for link.", e)
                     return@addSnapshotListener
                 }
                 val trips = snapshot?.toObjects(FirestoreTrip::class.java) ?: emptyList()
@@ -297,7 +294,7 @@ class CloudTripRepository @Inject constructor() {
             .whereEqualTo("status", "PENDING")
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    close(e)
+                     android.util.Log.e("CloudTripRepo", "Error fetching pending count", e)
                     return@addSnapshotListener
                 }
                 trySend(snapshot?.size() ?: 0)

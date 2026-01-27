@@ -98,7 +98,7 @@ class CloudFuelRepository(
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    Log.e(TAG, "Error listening to requests", error)
+                    Log.e(TAG, "Error listening to requests. MISSING INDEX? Check log url.", error)
                     return@addSnapshotListener
                 }
 

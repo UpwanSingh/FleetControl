@@ -357,9 +357,14 @@ fun NavGraph(
         
         // Pending Trips Approval (Security Hardening)
         composable(Routes.PENDING_TRIPS) {
-            // Collect pending trips as state
+            // Collect pending trips as state with error handling
             val pendingTripsFlow = remember { app.container.cloudTripRepository.getPendingTripsFlow() }
-            val pendingTrips by pendingTripsFlow.collectAsState(initial = emptyList())
+            val pendingTrips = try {
+                 pendingTripsFlow.collectAsState(initial = emptyList()).value
+            } catch (e: Exception) {
+                 android.util.Log.e("NavGraph", "Crash prevented in PendingTrips", e)
+                 emptyList()
+            }
             val isLoadingState by ownerDashboardViewModel.isLoading.collectAsState()
             
             com.fleetcontrol.ui.owner.PendingTripsScreenSimple(

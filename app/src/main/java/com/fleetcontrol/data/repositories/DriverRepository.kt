@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
  * Repository for Driver data operations
  * Synchronizes with Firestore (Master Data)
  */
-class DriverRepository(
+open class DriverRepository(
     private val driverDao: DriverDao,
     private val cloudRepo: CloudMasterDataRepository
 ) {

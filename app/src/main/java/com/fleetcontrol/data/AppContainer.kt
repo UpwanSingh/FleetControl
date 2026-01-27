@@ -121,7 +121,8 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
             cloudTripRepository,
             driverRepository,
             companyRepository,
-            pickupRepository
+            pickupRepository,
+            syncWorkManager // Injected for robust offline sync
         )
     }
     

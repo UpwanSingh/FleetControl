@@ -14,22 +14,25 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class CloudTripRepository @Inject constructor() {
+open class CloudTripRepository @Inject constructor() {
 
     private val db = FirebaseFirestore.getInstance()
     
     /**
      * Owner ID Flow for Reactive Sync
      */
+    /**
+     * Owner ID Flow for Reactive Sync
+     */
     private val _ownerId = kotlinx.coroutines.flow.MutableStateFlow("")
-    val ownerId = _ownerId.asStateFlow()
+    open val ownerId = _ownerId.asStateFlow()
 
     /**
      * Current owner's Firebase UID for multi-tenancy.
      * MUST be set before any operations.
      */
-    var currentOwnerId: String = ""
-        private set
+    open var currentOwnerId: String = ""
+        // private set // Removed private set to allow open modification for testing
     
     // Tenant ID is the same as Owner ID for now
     val currentTenantId: String

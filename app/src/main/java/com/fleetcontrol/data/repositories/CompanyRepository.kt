@@ -11,9 +11,9 @@ import kotlinx.coroutines.launch
 
 /**
  * Repository for Company data operations
- * Synchronizes with Firestore (Master Data)
+ * Implements Section 11 of BUSINESS_LOGIC_SPEC.md with Sync
  */
-class CompanyRepository(
+open class CompanyRepository(
     private val companyDao: CompanyDao,
     private val cloudRepo: CloudMasterDataRepository
 ) {

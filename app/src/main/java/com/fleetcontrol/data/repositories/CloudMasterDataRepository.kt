@@ -7,11 +7,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class CloudMasterDataRepository @Inject constructor() {
+
+
+open class CloudMasterDataRepository {
 
     private val db = FirebaseFirestore.getInstance()
     
@@ -19,7 +18,7 @@ class CloudMasterDataRepository @Inject constructor() {
      * Owner ID Flow for Reactive Sync
      */
     private val _ownerId = kotlinx.coroutines.flow.MutableStateFlow("")
-    val ownerId = _ownerId.asStateFlow()
+    open val ownerId = _ownerId.asStateFlow()
 
     /**
      * Current owner's Firebase UID for multi-tenancy.
@@ -27,8 +26,8 @@ class CloudMasterDataRepository @Inject constructor() {
      * All queries will be filtered by this ownerId.
      * All writes will include this ownerId.
      */
-    var currentOwnerId: String = ""
-        private set
+    open var currentOwnerId: String = ""
+        // private set
     
     // Tenant ID is the same as Owner ID for now (owner creates their own tenant)
     val currentTenantId: String

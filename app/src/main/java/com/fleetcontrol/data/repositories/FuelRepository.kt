@@ -14,10 +14,10 @@ import kotlinx.coroutines.launch
  * Repository for Fuel data operations
  * Implements Section 6 of BUSINESS_LOGIC_SPEC.md with Sync
  */
-class FuelRepository(
-    private val fuelDao: FuelDao,
-    private val cloudRepo: CloudMasterDataRepository,
-    private val driverDao: DriverDao
+open class FuelRepository(
+    private val fuelDao: com.fleetcontrol.data.dao.FuelDao,
+    private val cloudRepo: com.fleetcontrol.data.repositories.CloudMasterDataRepository,
+    private val driverDao: com.fleetcontrol.data.dao.DriverDao
 ) {
     
     private val scope = CoroutineScope(Dispatchers.IO)

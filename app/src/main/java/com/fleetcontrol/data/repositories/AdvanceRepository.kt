@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
  * Repository for Advance data operations
  * Implements Section 7 - Driver Advance Rules
  */
-class AdvanceRepository(
+open class AdvanceRepository(
     private val advanceDao: AdvanceDao,
     private val cloudRepo: CloudMasterDataRepository,
     private val driverDao: DriverDao

@@ -15,21 +15,19 @@ import kotlinx.coroutines.launch
  * Implements Section 4, 5, 8 of BUSINESS_LOGIC_SPEC.md
  * Synced with Cloud Master Data via CloudTripRepository
  */
-class TripRepository(
+open class TripRepository(
     private val tripDao: TripDao,
     private val cloudRepo: com.fleetcontrol.data.repositories.CloudTripRepository, // Manually injected
     private val driverRepo: com.fleetcontrol.data.repositories.DriverRepository, // Added for Up-Sync Name Resolution
     private val companyRepo: com.fleetcontrol.data.repositories.CompanyRepository, // Added for ID Resolution
-    private val pickupRepo: com.fleetcontrol.data.repositories.PickupLocationRepository // Added for ID Resolution
+    private val pickupRepo: com.fleetcontrol.data.repositories.PickupLocationRepository, // Added for ID Resolution
+    private val syncWorkManager: com.fleetcontrol.work.SyncWorkManager? = null // Optional for backward compatibility/testing
 ) {
     
     // Sync Scope
     private val scope = CoroutineScope(Dispatchers.IO)
     
     init {
-        // ... (Down-Sync Logic remains mostly same, just ensure context is right) ...
-        // Start Listening for Cloud Updates (Down-Sync)
-        // Start Listening for Cloud Updates (Down-Sync)
         // Start Listening for Cloud Updates (Down-Sync)
         val tripsFlow: Flow<List<com.fleetcontrol.data.entities.FirestoreTrip>> = cloudRepo.ownerId.flatMapLatest { ownerId: String ->
             if (ownerId.isEmpty()) kotlinx.coroutines.flow.flowOf(emptyList<com.fleetcontrol.data.entities.FirestoreTrip>())
@@ -117,8 +115,6 @@ class TripRepository(
             }
         }
     }
-        
-
     
     suspend fun getPendingTripCount(): Int {
         return tripDao.getUnsyncedTripCount(cloudRepo.currentOwnerId)
@@ -350,9 +346,10 @@ class TripRepository(
                     tripDao.markTripAsSynced(id)
                 }
             } catch (e: Exception) {
-                // Failed - will retry via syncPendingTrips on next app start
-                Log.e("TripRepository", "Error syncing trip", e)
+                // Failed - will retry via WorkManager
+                Log.e("TripRepository", "Error syncing trip, scheduling background retry", e)
                 tripDao.incrementSyncAttempts(id)
+                syncWorkManager?.scheduleImmediateSync()
             }
         }
         
@@ -395,8 +392,10 @@ class TripRepository(
                 )
                 cloudRepo.addTrip(fTrip)
             } catch (e: Exception) {
-                Log.e("TripRepository", "Error syncing trip", e)
+                // Failed - will retry via WorkManager
+                Log.e("TripRepository", "Error syncing trip, scheduling background retry", e)
                 tripDao.incrementSyncAttempts(trip.id)
+                syncWorkManager?.scheduleImmediateSync()
             }
         }
     }

@@ -12,8 +12,9 @@ import kotlinx.coroutines.launch
 /**
  * Repository for Pickup Location data operations
  * Synchronizes with Firestore (Master Data)
+ * Implements Section 12 of BUSINESS_LOGIC_SPEC.md
  */
-class PickupLocationRepository(
+open class PickupLocationRepository(
     private val pickupLocationDao: PickupLocationDao,
     private val cloudRepo: CloudMasterDataRepository
 ) {

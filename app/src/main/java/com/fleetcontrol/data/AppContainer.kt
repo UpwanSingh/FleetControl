@@ -248,7 +248,13 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
     
     override val firestore: com.google.firebase.firestore.FirebaseFirestore by lazy {
-        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+        val fs = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+        val settings = com.google.firebase.firestore.FirebaseFirestoreSettings.Builder()
+            .setPersistenceEnabled(true)
+            .setCacheSizeBytes(com.google.firebase.firestore.FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+            .build()
+        fs.firestoreSettings = settings
+        fs
     }
     
     /**

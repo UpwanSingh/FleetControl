@@ -1,0 +1,314 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================
+    // 🔑 AUTH & USER HELPERS
+    // ===============================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function tenantId() {
+      return userDoc().data.tenantId;
+    }
+
+    function role() {
+      return userDoc().data.role;
+    }
+
+    function isOwner() {
+      return userExists() && role() == "owner";
+    }
+
+    function isManager() {
+      return userExists() && role() == "manager";
+    }
+
+    function isDriver() {
+      return userExists() && role() == "driver";
+    }
+
+    function sameTenant(tid) {
+      return userExists() && tenantId() == tid;
+    }
+
+    // ===============================
+    // 🔐 INVITE CODE VALIDATION
+    // ===============================
+
+    function isValidInviteConsume(codeId) {
+      let invite = get(/databases/$(database)/documents/inviteCodes/$(codeId));
+      return isAuthenticated()
+        && invite.exists()
+        && invite.data.used == false
+        && invite.data.expiresAt > request.time
+        && request.resource.data.ownerId == invite.data.ownerId
+        && request.resource.data.firestoreDriverId == invite.data.firestoreDriverId
+        && request.resource.data.driverName == invite.data.driverName
+        && request.resource.data.used == true
+        && request.resource.data.usedBy == request.auth.uid
+        && request.resource.data.diff(invite.data).changedKeys().hasOnly(['used', 'usedBy', 'usedAt']);
+    }
+
+    function isValidDriverUserCreate(uid) {
+      return request.resource.data.role == "driver"
+        && request.resource.data.tenantId is string
+        && request.resource.data.inviteCode is string
+        && exists(/databases/$(database)/documents/inviteCodes/$(request.resource.data.inviteCode))
+        && get(/databases/$(database)/documents/inviteCodes/$(request.resource.data.inviteCode)).data.used == true
+        && get(/databases/$(database)/documents/inviteCodes/$(request.resource.data.inviteCode)).data.usedBy == uid
+        && get(/databases/$(database)/documents/inviteCodes/$(request.resource.data.inviteCode)).data.ownerId == request.resource.data.tenantId
+        && get(/databases/$(database)/documents/inviteCodes/$(request.resource.data.inviteCode)).data.expiresAt > request.time;
+    }
+
+    function isValidOwnerUserCreate(uid) {
+      return request.resource.data.role == "owner"
+        && request.resource.data.tenantId == uid;
+    }
+
+    function isValidUserUpdate() {
+      return request.resource.data.role == resource.data.role
+        && request.resource.data.tenantId == resource.data.tenantId
+        && request.resource.data.inviteCode == resource.data.inviteCode;
+    }
+
+    // ===============================
+    // 🚛 TRIP VALIDATION FUNCTIONS
+    // ===============================
+
+    // Field immutability check + version validation (Sync Audit Fix #3)
+    function isValidTripUpdate() {
+      return request.resource.data.driverId == resource.data.driverId
+        && request.resource.data.companyId == resource.data.companyId
+        && request.resource.data.pickupId == resource.data.pickupId
+        && request.resource.data.clientId == resource.data.clientId
+        && request.resource.data.timestamp == resource.data.timestamp
+        && request.resource.data.bags == resource.data.bags
+        && request.resource.data.rate == resource.data.rate
+        && request.resource.data.totalAmount == resource.data.totalAmount
+        && request.resource.data.ownerGross == resource.data.ownerGross
+        && request.resource.data.labourCost == resource.data.labourCost
+        // Version must be incremented exactly by 1 (prevents concurrent overwrites)
+        && request.resource.data.version == resource.data.version + 1;
+    }
+
+    // Field type and range validation
+    function hasValidTripFields() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['driverId', 'companyId', 'bags', 'rate', 'timestamp', 'status'])
+        && data.driverId is string
+        && data.companyId is string
+        && data.bags is int
+        && data.bags > 0
+        && data.bags < 10000
+        && data.rate is number
+        && data.rate > 0
+        && data.rate < 1000
+        && data.timestamp is int
+        && data.status in ['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED'];
+    }
+
+    // Driver must create with PENDING status
+    function isValidDriverTripCreate() {
+      return isDriver() && request.resource.data.status == "PENDING";
+    }
+
+    // Owner/Manager can create with any status
+    function isValidOwnerTripCreate() {
+      return isOwner() || isManager();
+    }
+
+    // ===============================
+    // ⛽ FUEL REQUEST VALIDATION
+    // ===============================
+
+    function hasValidFuelRequestFields() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['driverId', 'amount', 'date', 'status'])
+        && data.driverId is string
+        && data.amount is number
+        && data.amount > 0
+        && data.amount < 50000
+        && data.status in ['PENDING', 'APPROVED', 'REJECTED'];
+    }
+
+    function isValidDriverFuelRequest() {
+      return isDriver() && request.resource.data.status == "PENDING";
+    }
+
+    // ===============================
+    // 👤 USERS
+    // ===============================
+    match /users/{uid} {
+      allow get: if isAuthenticated() && request.auth.uid == uid;
+      allow list: if false;
+      allow create: if isAuthenticated()
+        && request.auth.uid == uid
+        && (isValidOwnerUserCreate(uid) || isValidDriverUserCreate(uid));
+      allow update: if isAuthenticated() && request.auth.uid == uid && isValidUserUpdate();
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 🏢 TENANTS
+    // ===============================
+    match /tenants/{tenantId} {
+      allow read: if sameTenant(tenantId);
+      // Note: Owner check requires user doc to exist first
+      // This is handled by creating user doc before tenant doc
+      allow create: if isAuthenticated() && request.auth.uid == tenantId;
+      allow update: if isOwner() && sameTenant(tenantId);
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 🚚 DRIVERS
+    // ===============================
+    match /tenants/{tenantId}/drivers/{driverId} {
+      allow read: if sameTenant(tenantId);
+      allow create, update: if sameTenant(tenantId) && (isOwner() || isManager());
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 🏭 COMPANIES
+    // ===============================
+    match /tenants/{tenantId}/companies/{docId} {
+      allow read: if sameTenant(tenantId);
+      allow create, update: if sameTenant(tenantId) && (isOwner() || isManager());
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 👥 CLIENTS
+    // ===============================
+    match /tenants/{tenantId}/clients/{docId} {
+      allow read: if sameTenant(tenantId);
+      allow create, update: if sameTenant(tenantId) && (isOwner() || isManager());
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 📍 LOCATIONS
+    // ===============================
+    match /tenants/{tenantId}/locations/{docId} {
+      allow read: if sameTenant(tenantId);
+      allow create, update: if sameTenant(tenantId) && (isOwner() || isManager());
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 📏 RATE SLABS
+    // ===============================
+    match /tenants/{tenantId}/rate_slabs/{docId} {
+      allow read: if sameTenant(tenantId);
+      allow create, update: if sameTenant(tenantId) && (isOwner() || isManager());
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 📐 PICKUP-CLIENT DISTANCES
+    // ===============================
+    match /tenants/{tenantId}/pickup_client_distances/{docId} {
+      allow read: if sameTenant(tenantId);
+      allow create, update: if sameTenant(tenantId) && (isOwner() || isManager());
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 🚛 TRIPS (FULLY HARDENED)
+    // - Driver: Create with status=PENDING only
+    // - Owner/Manager: Create with any status
+    // - Update: Owner/Manager only, financial fields immutable
+    // - Field validation enforced
+    // ===============================
+    match /tenants/{tenantId}/trips/{tripId} {
+      allow read: if sameTenant(tenantId);
+      
+      // CREATE: Validate fields + status based on role
+      allow create: if sameTenant(tenantId) 
+        && hasValidTripFields()
+        && (isValidOwnerTripCreate() || isValidDriverTripCreate());
+      
+      // UPDATE: Owner/Manager only, immutable financial fields
+      allow update: if sameTenant(tenantId) 
+        && (isOwner() || isManager()) 
+        && isValidTripUpdate();
+      
+      allow delete: if false;
+    }
+
+    // ===============================
+    // ⛽ FUEL (OWNER/MANAGER ONLY)
+    // - Drivers cannot create fuel directly
+    // - Must use fuel request workflow
+    // ===============================
+    match /tenants/{tenantId}/fuel/{fuelId} {
+      allow read: if sameTenant(tenantId);
+      allow create: if sameTenant(tenantId) && (isOwner() || isManager());
+      allow update: if sameTenant(tenantId) && (isOwner() || isManager());
+      allow delete: if false;
+    }
+
+    // ===============================
+    // ⛽ FUEL REQUESTS (NEW)
+    // - Driver creates with status=PENDING
+    // - Owner/Manager approves/rejects
+    // ===============================
+    match /tenants/{tenantId}/fuelRequests/{requestId} {
+      allow read: if sameTenant(tenantId);
+      
+      // CREATE: Driver can request, Owner can also create
+      allow create: if sameTenant(tenantId)
+        && hasValidFuelRequestFields()
+        && (isValidOwnerTripCreate() || isValidDriverFuelRequest());
+      
+      // UPDATE: Only Owner/Manager can approve/reject
+      allow update: if sameTenant(tenantId) && (isOwner() || isManager());
+      
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 💰 ADVANCES (OWNER/MANAGER ONLY)
+    // ===============================
+    match /tenants/{tenantId}/advances/{advanceId} {
+      allow read: if sameTenant(tenantId);
+      allow create, update: if sameTenant(tenantId) && (isOwner() || isManager());
+      allow delete: if false;
+    }
+
+    // ===============================
+    // 📊 STATS (READ-ONLY)
+    // - Compute on read to prevent manipulation
+    // ===============================
+    match /tenants/{tenantId}/stats/{docId} {
+      allow read: if sameTenant(tenantId);
+      allow write: if false;
+    }
+
+    // ===============================
+    // 🔑 INVITE CODES
+    // ===============================
+    match /inviteCodes/{codeId} {
+      allow get: if isAuthenticated();
+      allow list: if false;
+      allow create: if isOwner()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.used == false;
+      allow update: if isValidInviteConsume(codeId);
+      allow delete: if false;
+    }
+  }
+}
+

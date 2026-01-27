@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FleetControl</string>
+    
+    <!-- Common -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="add">Add</string>
+    <string name="confirm">Confirm</string>
+    <string name="loading">Loading…</string>
+    <string name="error">Error</string>
+    <string name="success">Success</string>
+    <string name="retry">Retry</string>
+    
+    <!-- Auth -->
+    <string name="owner_mode">Owner Mode</string>
+    <string name="driver_mode">Driver Mode</string>
+    <string name="select_role">Select Your Role</string>
+    
+    <!-- Owner -->
+    <string name="dashboard">Dashboard</string>
+    <string name="drivers">Drivers</string>
+    <string name="companies">Companies</string>
+    <string name="pickups">Pickup Locations</string>
+    <string name="profit">Profit</string>
+    <string name="reports">Reports</string>
+    
+    <!-- Driver -->
+    <string name="add_trip">Add Trip</string>
+    <string name="add_fuel">Add Fuel</string>
+    <string name="my_earnings">My Earnings</string>
+    
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="subscription">Subscription</string>
+    <string name="backup_restore">Backup &amp; Restore</string>
+    <string name="help_legal">Help &amp; Legal</string>
+    <string name="about">About</string>
+</resources>

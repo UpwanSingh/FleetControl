@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:scaleX="0.484"
+        android:scaleY="0.484"
+        android:translateX="27.864"
+        android:translateY="27.864">
+        <!-- Truck icon simplified -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M20,8h-3V4H3c-1.1,0 -2,0.9 -2,2v11h2c0,1.66 1.34,3 3,3s3,-1.34 3,-3h6c0,1.66 1.34,3 3,3s3,-1.34 3,-3h2v-5l-3,-4zM6,18.5c-0.83,0 -1.5,-0.67 -1.5,-1.5s0.67,-1.5 1.5,-1.5 1.5,0.67 1.5,1.5 -0.67,1.5 -1.5,1.5zM18,18.5c-0.83,0 -1.5,-0.67 -1.5,-1.5s0.67,-1.5 1.5,-1.5 1.5,0.67 1.5,1.5 -0.67,1.5 -1.5,1.5zM19.5,12h-2.5V9.5h1.96L19.5,12z"/>
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M7,15h8v-1H7v1zM3,7h14v1H3V7z"/>
+    </group>
+</vector>

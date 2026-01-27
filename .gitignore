@@ -1,0 +1,35 @@
+# Build outputs
+build/
+app/build/
+.gradle/
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Logs & Debug
+*.log
+crash_log.txt
+assemble_log.txt
+build_info.txt
+build_log*.txt
+build_output.txt
+
+# Local configuration
+.DS_Store
+local.properties
+keystore.properties
+**/*.keystore
+**/*.jks
+
+# Secrets (NEVER commit these)
+google-services.json
+*.pem
+*.key
+secrets/
+
+# Task tracking (dev only)
+task_completion_record.md

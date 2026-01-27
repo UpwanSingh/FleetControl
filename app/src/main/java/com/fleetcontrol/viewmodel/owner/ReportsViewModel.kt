@@ -87,7 +87,7 @@ class ReportsViewModel(
     }
     
     private fun loadCurrentPlan() {
-        viewModelScope.launch {
+        launchCatching {
             featureGate.getCurrentPlan().collect { plan ->
                 _currentPlan.value = plan
             }

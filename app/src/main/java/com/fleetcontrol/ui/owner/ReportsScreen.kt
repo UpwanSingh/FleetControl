@@ -29,6 +29,7 @@ import com.fleetcontrol.ui.components.FleetColors
 import com.fleetcontrol.ui.components.FleetDimens
 import com.fleetcontrol.viewmodel.owner.ReportsViewModel
 import com.fleetcontrol.viewmodel.owner.ExportResult
+import com.fleetcontrol.ui.common.ErrorDialog
 import com.fleetcontrol.utils.CurrencyUtils
 import com.fleetcontrol.utils.DateUtils
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +63,15 @@ fun ReportsScreen(
     val exportResult by viewModel.exportResult.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    
+    // Global Error Handling
+    val errorState by viewModel.error.collectAsState()
+    if (errorState != null) {
+        com.fleetcontrol.ui.common.ErrorDialog(
+            message = errorState!!,
+            onDismiss = { viewModel.clearError() }
+        )
+    }
     
     // CSV file picker launcher
     val csvFileLauncher = rememberLauncherForActivityResult(

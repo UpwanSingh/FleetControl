@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Default Deny: App currently uses local storage (TripAttachmentRepository)
+      // If Cloud Storage is enabled later, update this to allow owner access.
+      allow read, write: if false;
+    }
+  }
+}

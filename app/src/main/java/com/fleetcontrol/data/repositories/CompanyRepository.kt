@@ -124,7 +124,7 @@ open class CompanyRepository(
         // Push to Cloud with retry
         scope.launch {
             val fComp = FirestoreCompany(
-                id = companyWithOwner.firestoreId ?: "",
+                id = companyWithOwner.firestoreId, // Guaranteed non-null
                 name = companyWithOwner.name,
                 contactPerson = companyWithOwner.contactPerson ?: "",
                 contactPhone = companyWithOwner.contactPhone ?: "",
@@ -132,18 +132,10 @@ open class CompanyRepository(
                 isActive = companyWithOwner.isActive
             )
             
-            val cloudId = com.fleetcontrol.data.sync.CloudSyncHelper.pushWithRetry(
+            com.fleetcontrol.data.sync.CloudSyncHelper.pushWithRetry(
                 operationName = "addCompany",
                 operation = { cloudRepo.addCompany(fComp) }
             )
-            
-            if (cloudId != null && companyWithOwner.firestoreId == null) {
-                val inserted = companyDao.getCompanyById(id)
-                if (inserted != null) {
-                    companyDao.update(inserted.copy(firestoreId = cloudId))
-                    Log.d("CompanyRepository", "Company synced to cloud with ID: $cloudId")
-                }
-            }
         }
         return id
     }

@@ -117,23 +117,16 @@ open class PickupLocationRepository(
         // Push to Cloud with retry
         scope.launch {
             val fLoc = FirestoreLocation(
-                id = locationWithOwner.firestoreId ?: "",
+                id = locationWithOwner.firestoreId, // Guaranteed non-null
                 name = locationWithOwner.name,
                 distanceFromBase = locationWithOwner.distanceFromBase,
                 isActive = locationWithOwner.isActive
             )
             
-            val cloudId = com.fleetcontrol.data.sync.CloudSyncHelper.pushWithRetry(
+            com.fleetcontrol.data.sync.CloudSyncHelper.pushWithRetry(
                 operationName = "addLocation",
                 operation = { cloudRepo.addLocation(fLoc) }
             )
-            
-            if (cloudId != null && locationWithOwner.firestoreId == null) {
-                val inserted = pickupLocationDao.getLocationById(id)
-                if (inserted != null) {
-                    pickupLocationDao.update(inserted.copy(firestoreId = cloudId))
-                }
-            }
         }
         return id
     }

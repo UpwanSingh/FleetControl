@@ -3,6 +3,8 @@ package com.fleetcontrol.ui.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -58,6 +60,7 @@ fun AboutScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(androidx.compose.foundation.rememberScrollState())
                 .padding(FleetDimens.SpacingMedium),
             verticalArrangement = Arrangement.spacedBy(FleetDimens.SpacingSmall)
         ) {

@@ -24,7 +24,7 @@ data class PickupLocationEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     
-    val firestoreId: String? = null,
+    val firestoreId: String = java.util.UUID.randomUUID().toString(),
     
     /**
      * Owner's Firebase UID - Multi-Tenancy isolation

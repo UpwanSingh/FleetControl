@@ -78,30 +78,43 @@ class OwnerDashboardViewModel(
                 // FIX: Firestore stats are stored 1-based (Jan=1), but DateUtils returns 0-based.
                 val currentMonth = DateUtils.getCurrentMonth() + 1
                 
-                // Combine Monthly Stats (Profit) and Today's Trip Count (Activity)
+                // Combine Raw Trips (Sync) and Today's Count
                 kotlinx.coroutines.flow.combine(
-                    cloudTripRepository.getDriverStatsFlow(currentYear, currentMonth),
+                    cloudTripRepository.getTripsForMonthFlow(currentYear, currentMonth), // <--- CHANGE: Raw Trips
                     cloudTripRepository.getTodayTripCountFlow(),
-                    driverRepository.getActiveDrivers() // Flow<List<DriverEntity>>
-                ) { cloudStats, todayCount, activeDrivers ->
-                    Triple(cloudStats, todayCount, activeDrivers.size)
+                    driverRepository.getActiveDrivers()
+                ) { monthTrips, todayCount, activeDrivers ->
+                    Triple(monthTrips, todayCount, activeDrivers.size)
                 }
                 .catch { e -> 
-                    // Firestore query failed (missing index, no network, etc.)
-                    // Fall back to empty state, don't crash
                     android.util.Log.e("OwnerDashboardVM", "Error observing dashboard", e)
                     emit(Triple(emptyList(), 0, 0))
                 }
-                .collect { (cloudStats, todayCount, activeDriverCount) ->
-                    val monthlyProfit = aggregationCalculator.calculateOwnerProfit(cloudStats)
+                .collect { (monthTrips, todayCount, activeDriverCount) ->
+                    // CLIENT-SIDE AGGREGATION (Serverless Architecture)
+                    val totalRevenue = monthTrips.sumOf { it.ownerGross }
+                    val totalLabour = monthTrips.sumOf { it.labourCost }
+                    val totalDriverPay = monthTrips.sumOf { it.bags * it.rate } // Recalculate for safety
+                    val netProfit = totalRevenue - totalDriverPay - totalLabour
+                    
+                    val margin = if (totalRevenue > 0) (netProfit / totalRevenue) * 100 else 0.0
+                    
+                    val summary = OwnerProfitSummary(
+                        grossRevenue = totalRevenue,
+                        driverEarnings = totalDriverPay,
+                        labourCost = totalLabour,
+                        netProfit = netProfit,
+                        tripCount = monthTrips.size,
+                        totalBags = monthTrips.sumOf { it.bags }.toInt(),
+                        profitMargin = margin
+                    )
                     
                     _dashboardState.value = _dashboardState.value.copy(
                         todayTripCount = todayCount,
-                        todayProfit = monthlyProfit.netProfit / 30, // Approximate for today if needed, or use monthly
+                        todayProfit = netProfit / 30, // Rough daily average
                         activeDriverCount = activeDriverCount,
-                        monthlyProfitSummary = monthlyProfit,
+                        monthlyProfitSummary = summary,
                         isLoaded = true,
-                        // Update sync timestamp on every real-time update
                         lastSyncedAt = System.currentTimeMillis()
                     )
                 }

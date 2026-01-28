@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 9,
-    "identityHash": "7000336ab8a20dac936695f88993831d",
+    "identityHash": "afc9e6e65365170c0bf1c429df667859",
     "entities": [
       {
         "tableName": "users",
@@ -112,7 +112,7 @@
       },
       {
         "tableName": "companies",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `firestoreId` TEXT, `ownerId` TEXT NOT NULL, `name` TEXT NOT NULL, `contactPerson` TEXT, `contactPhone` TEXT, `perBagRate` REAL NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `firestoreId` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `name` TEXT NOT NULL, `contactPerson` TEXT, `contactPhone` TEXT, `perBagRate` REAL NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -124,7 +124,7 @@
             "fieldPath": "firestoreId",
             "columnName": "firestoreId",
             "affinity": "TEXT",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "ownerId",
@@ -310,7 +310,7 @@
       },
       {
         "tableName": "drivers",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `firestoreId` TEXT, `ownerId` TEXT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `pin` TEXT NOT NULL, `currentAdvanceBalance` REAL NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `firestoreId` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `pin` TEXT NOT NULL, `currentAdvanceBalance` REAL NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -322,7 +322,7 @@
             "fieldPath": "firestoreId",
             "columnName": "firestoreId",
             "affinity": "TEXT",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "ownerId",
@@ -406,7 +406,7 @@
       },
       {
         "tableName": "pickup_locations",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `firestoreId` TEXT, `ownerId` TEXT NOT NULL, `name` TEXT NOT NULL, `distanceFromBase` REAL NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `firestoreId` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `name` TEXT NOT NULL, `distanceFromBase` REAL NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -418,7 +418,7 @@
             "fieldPath": "firestoreId",
             "columnName": "firestoreId",
             "affinity": "TEXT",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "ownerId",
@@ -1462,7 +1462,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7000336ab8a20dac936695f88993831d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'afc9e6e65365170c0bf1c429df667859')"
     ]
   }
 }

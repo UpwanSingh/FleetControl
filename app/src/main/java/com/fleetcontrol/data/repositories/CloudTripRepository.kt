@@ -374,4 +374,31 @@ open class CloudTripRepository @Inject constructor() {
             emptyList()
         }
     }
+    /**
+     * Get Stream of Trips for a Specific Month (for Client-Side Aggregation)
+     * Replaces relying on 'stats' collection which requires Cloud Functions.
+     */
+    fun getTripsForMonthFlow(year: Int, month: Int): kotlinx.coroutines.flow.Flow<List<FirestoreTrip>> = kotlinx.coroutines.flow.callbackFlow {
+        if (currentOwnerId.isEmpty()) {
+            trySend(emptyList())
+            awaitClose { }
+            return@callbackFlow
+        }
+        
+        val start = com.fleetcontrol.utils.DateUtils.getStartOfMonth(year, month - 1) // DateUtils uses 0-based month
+        val end = com.fleetcontrol.utils.DateUtils.getEndOfMonth(year, month - 1)
+
+        val listener = tripsRef()
+            .whereGreaterThanOrEqualTo("timestamp", start)
+            .whereLessThanOrEqualTo("timestamp", end)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    android.util.Log.e("CloudTripRepo", "Error fetching month trips", e)
+                    return@addSnapshotListener
+                }
+                val trips = snapshot?.toObjects(FirestoreTrip::class.java) ?: emptyList()
+                trySend(trips)
+            }
+        awaitClose { listener.remove() }
+    }
 }

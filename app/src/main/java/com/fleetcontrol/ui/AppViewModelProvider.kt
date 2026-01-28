@@ -164,6 +164,22 @@ object AppViewModelProvider {
                 fleetControlApplication().container.dataMigrationManager
             )
         }
+
+        initializer {
+            com.fleetcontrol.viewmodel.auth.DriverJoinViewModel(
+                fleetControlApplication().container.authService,
+                fleetControlApplication().container.appSettings,
+                fleetControlApplication().container.sessionManager,
+                fleetControlApplication().container.cloudMasterDataRepository,
+                fleetControlApplication().container.cloudTripRepository,
+                fleetControlApplication().container.driverRepository,
+                fleetControlApplication().container.companyRepository,
+                fleetControlApplication().container.clientRepository,
+                fleetControlApplication().container.pickupRepository,
+                fleetControlApplication().container.rateSlabRepository,
+                fleetControlApplication().container.firestore
+            )
+        }
     }
 }
 

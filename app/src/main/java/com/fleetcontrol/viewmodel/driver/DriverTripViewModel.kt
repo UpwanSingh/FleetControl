@@ -237,66 +237,7 @@ class DriverTripViewModel(
         }
     }
     
-    /**
-     * Legacy method - Add trip with client name (for backward compatibility)
-     * @deprecated Use addTrip with clientId instead
-     */
-    @Deprecated("Use addTrip with clientId instead", ReplaceWith("addTrip(companyId, clientId, pickupLocationId, bagCount)"))
-    fun addTripLegacy(
-        companyId: Long,
-        pickupLocationId: Long,
-        clientName: String,
-        bagCount: Int
-    ) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            
-            try {
-                val driverId = sessionManager.getCurrentDriverId()
-                    ?: throw IllegalStateException("Driver not logged in")
-                
-                if (bagCount <= 0) {
-                    throw IllegalArgumentException("Bag count must be greater than 0")
-                }
-                
-                val company = companyRepository.getCompanyById(companyId)
-                    ?: throw IllegalStateException("Company not found")
-                
-                val pickup = pickupLocationRepository.getLocationById(pickupLocationId)
-                    ?: throw IllegalStateException("Pickup location not found")
-                
-                // Use pickup's distanceFromBase as fallback
-                val driverRate = rateSlabResolver.resolveDriverRate(pickup.distanceFromBase)
-                
-                val labourCostRule = labourCostDao.getDefaultRule()
-                val labourCostPerBag = labourCostRule?.costPerBag ?: 0.0
-                
-                val trip = TripEntity(
-                    driverId = driverId,
-                    companyId = companyId,
-                    pickupLocationId = pickupLocationId,
-                    clientId = 0, // No client ID for legacy trips
-                    clientName = clientName,
-                    bagCount = bagCount,
-                    snapshotDistanceKm = pickup.distanceFromBase,
-                    snapshotDriverRate = driverRate,
-                    snapshotCompanyRate = company.perBagRate,
-                    snapshotLabourCostPerBag = labourCostPerBag,
-                    tripDate = System.currentTimeMillis(),
-                    status = TripStatus.COMPLETED
-                )
-                
-                tripRepository.insert(trip)
-                _tripSaved.value = true
-                
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to add trip"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
+
     
     fun resetTripSaved() {
         _tripSaved.value = false

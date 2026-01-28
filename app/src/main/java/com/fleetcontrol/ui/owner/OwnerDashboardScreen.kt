@@ -516,9 +516,12 @@ private fun QuickActionTile(
             Spacer(modifier = Modifier.height(FleetDimens.SpacingSmall))
             Text(
                 label,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
-                color = FleetColors.TextPrimary
+                color = FleetColors.TextPrimary,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }
@@ -584,9 +587,12 @@ private fun QuickActionTileWithBadge(
             Spacer(modifier = Modifier.height(FleetDimens.SpacingSmall))
             Text(
                 label,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
-                color = if (badgeCount > 0) FleetColors.Warning else FleetColors.TextPrimary
+                color = if (badgeCount > 0) FleetColors.Warning else FleetColors.TextPrimary,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }

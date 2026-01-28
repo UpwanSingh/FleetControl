@@ -21,7 +21,8 @@ open class TripRepository(
     private val driverRepo: com.fleetcontrol.data.repositories.DriverRepository, // Added for Up-Sync Name Resolution
     private val companyRepo: com.fleetcontrol.data.repositories.CompanyRepository, // Added for ID Resolution
     private val pickupRepo: com.fleetcontrol.data.repositories.PickupLocationRepository, // Added for ID Resolution
-    private val syncWorkManager: com.fleetcontrol.work.SyncWorkManager? = null // Optional for backward compatibility/testing
+    private val syncWorkManager: com.fleetcontrol.work.SyncWorkManager? = null, // Optional for backward compatibility/testing
+    private val transactionManager: com.fleetcontrol.data.database.TransactionManager? = null // Injected
 ) {
     
     // Sync Scope
@@ -301,7 +302,14 @@ open class TripRepository(
     suspend fun insert(trip: TripEntity): Long {
         // Multi-Tenancy: Set ownerId from cloud repository
         val tripWithOwner = trip.copy(ownerId = cloudRepo.currentOwnerId)
-        val id = tripDao.insert(tripWithOwner)
+        
+        // AUDIT + DB INSERT (Atomic)
+        // If TransactionManager available, use it. Else fallback to DAO (backward compat)
+        val id = if (transactionManager != null) {
+            transactionManager.createTripWithRateSnapshot(tripWithOwner, performedBy = trip.driverId)
+        } else {
+            tripDao.insert(tripWithOwner)
+        }
         
         // IMMEDIATE CLOUD SYNC - Critical for Real-Time Updates
         scope.launch {

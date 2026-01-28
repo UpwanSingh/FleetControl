@@ -20,6 +20,7 @@ import com.fleetcontrol.services.export.DriverPdfExportService
 import com.fleetcontrol.utils.DateUtils
 import com.fleetcontrol.viewmodel.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
@@ -60,7 +61,7 @@ class DriverReportsViewModel(
     val monthlyFuel: StateFlow<List<FuelEntryEntity>> = _monthlyFuel.asStateFlow()
     
     // Filtered trips based on search (using paging)
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val filteredTrips: Flow<PagingData<TripEntity>> = combine(
         driverId.filterNotNull(),
         _selectedYear,
@@ -164,7 +165,7 @@ class DriverReportsViewModel(
         val grossEarnings = trips.sumOf { it.bagCount * it.snapshotDriverRate }
         val totalFuelCost = fuel.sumOf { it.amount }
         val netEarnings = grossEarnings - totalFuelCost
-        val totalDistance = trips.sumOf { it.snapshotDistanceKm ?: 0.0 }
+        val totalDistance = trips.sumOf { it.snapshotDistanceKm }
         
         _summary.value = DriverReportSummary(
             totalTrips = trips.size,

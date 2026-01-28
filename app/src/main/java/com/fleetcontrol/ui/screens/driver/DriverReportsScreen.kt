@@ -425,7 +425,7 @@ private fun EarningsSummaryCard(summary: DriverReportSummary) {
                     Text(
                         "₹${String.format("%,.0f", summary.grossEarnings)}",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF2E7D32)
+                        color = FleetColors.Success
                     )
                 }
                 Column {
@@ -437,7 +437,7 @@ private fun EarningsSummaryCard(summary: DriverReportSummary) {
                     Text(
                         "-₹${String.format("%,.0f", summary.fuelCost)}",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFFC62828)
+                        color = FleetColors.Error
                     )
                 }
                 Column {
@@ -573,7 +573,7 @@ private fun TripItemCard(trip: TripEntity) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    trip.snapshotDistanceKm?.let { dist ->
+                    if (trip.snapshotDistanceKm > 0.0) {
                         Spacer(modifier = Modifier.width(FleetDimens.CornerMedium))
                         Icon(
                             Icons.Filled.Route,
@@ -583,7 +583,7 @@ private fun TripItemCard(trip: TripEntity) {
                         )
                         Spacer(modifier = Modifier.width(FleetDimens.SpacingExtraSmall))
                         Text(
-                            "${String.format("%.1f", dist)} km",
+                            "${String.format("%.1f", trip.snapshotDistanceKm)} km",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -596,7 +596,7 @@ private fun TripItemCard(trip: TripEntity) {
                     "₹${earnings.toInt()}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2E7D32)
+                    color = FleetColors.Success
                 )
             }
         }
@@ -703,7 +703,7 @@ private fun FuelItemCard(fuel: FuelEntryEntity) {
                     "-₹${fuel.amount.toInt()}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFC62828)
+                    color = FleetColors.Error
                 )
             }
         }

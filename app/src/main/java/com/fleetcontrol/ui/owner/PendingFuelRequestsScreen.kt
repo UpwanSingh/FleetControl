@@ -33,27 +33,61 @@ fun PendingFuelRequestsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     
     Scaffold(
+        containerColor = com.fleetcontrol.ui.components.FleetColors.Surface,
         topBar = {
-            TopAppBar(
-                title = { Text("Pending Fuel Requests") },
-                navigationIcon = {
+            Surface(
+                color = Color.White,
+                shadowElevation = 0.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, com.fleetcontrol.ui.components.FleetColors.SurfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(
+                            Icons.Default.ArrowBack, 
+                            "Back",
+                            tint = com.fleetcontrol.ui.components.FleetColors.TextPrimary
+                        )
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Pending Fuel Requests",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = com.fleetcontrol.ui.components.FleetColors.TextPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-            )
+            }
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (pendingRequests.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No pending requests", style = MaterialTheme.typography.bodyLarge)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                         Icon(
+                            imageVector = Icons.Default.LocalGasStation,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = com.fleetcontrol.ui.components.FleetColors.TextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "No pending requests", 
+                            style = MaterialTheme.typography.titleMedium,
+                            color = com.fleetcontrol.ui.components.FleetColors.TextSecondary
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(pendingRequests) { request ->
                         FuelRequestCard(
@@ -66,7 +100,10 @@ fun PendingFuelRequestsScreen(
             }
             
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                     color = com.fleetcontrol.ui.components.FleetColors.Primary
+                )
             }
         }
     }
@@ -82,57 +119,73 @@ fun FuelRequestCard(
     
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = com.fleetcontrol.ui.components.FleetColors.White),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(com.fleetcontrol.ui.components.FleetDimens.CornerLarge)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Default.LocalGasStation,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = com.fleetcontrol.ui.components.FleetColors.Primary
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
                         text = "₹${request.amount}",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                         color = com.fleetcontrol.ui.components.FleetColors.TextPrimary
                     )
                     Text(
                         text = DateUtils.formatDate(request.date),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = com.fleetcontrol.ui.components.FleetColors.TextSecondary
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
+                
+                 Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    color = com.fleetcontrol.ui.components.FleetColors.WarningLight
+                ) {
+                    Text(
+                        text = "PENDING",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = com.fleetcontrol.ui.components.FleetColors.Warning,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             
             if (request.notes.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "Notes: ${request.notes}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = com.fleetcontrol.ui.components.FleetColors.TextSecondary
                 )
             }
             
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
                     onClick = { showRejectDialog = true },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = com.fleetcontrol.ui.components.FleetColors.Error)
                 ) {
                     Icon(Icons.Default.Close, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Reject")
                 }
-                Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = onApprove,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = com.fleetcontrol.ui.components.FleetColors.Success)
                 ) {
                     Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))

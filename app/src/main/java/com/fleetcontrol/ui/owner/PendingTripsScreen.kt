@@ -77,18 +77,36 @@ private fun PendingTripsScreenContent(
 ) {
     
     Scaffold(
+        // Clean TopAppBar style header (Consistent with Client Screen)
         topBar = {
-            TopAppBar(
-                title = { Text("Pending Approvals") },
-                navigationIcon = {
+            Surface(
+                color = androidx.compose.ui.graphics.Color.White, // Pure White for contrast
+                shadowElevation = 0.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, FleetColors.SurfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = FleetColors.TextPrimary
+                        )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = FleetColors.Primary
-                )
-            )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Pending Approvals",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = FleetColors.TextPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         },
         containerColor = FleetColors.Surface
     ) { padding ->
@@ -161,8 +179,9 @@ private fun PendingTripCard(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize(),
-        shape = RoundedCornerShape(FleetDimens.CornerMedium),
-        colors = CardDefaults.cardColors(containerColor = FleetColors.SurfaceElevated)
+        shape = RoundedCornerShape(FleetDimens.CornerLarge),
+        colors = CardDefaults.cardColors(containerColor = FleetColors.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(FleetDimens.SpacingMedium)

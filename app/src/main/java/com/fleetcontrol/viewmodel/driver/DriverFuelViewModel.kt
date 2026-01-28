@@ -85,7 +85,6 @@ class DriverFuelViewModel(
                     ?: throw IllegalStateException("Driver profile not found")
                     
                 val driverFirestoreId = driver.firestoreId
-                    ?: throw IllegalStateException("Driver not synced to cloud yet")
                 
                 // Create PENDING request in Cloud
                 val request = com.fleetcontrol.data.entities.FirestoreFuelRequest(
@@ -93,7 +92,11 @@ class DriverFuelViewModel(
                     driverId = driverFirestoreId,
                     amount = amount,
                     date = System.currentTimeMillis(),
-                    notes = fuelStation ?: "",
+                    notes = buildString {
+                        if (!fuelStation.isNullOrEmpty()) append(fuelStation).append(". ")
+                        if (liters > 0) append("Liters: ").append(liters).append(". ")
+                        if (pricePerLiter > 0) append("Price/L: ").append(pricePerLiter)
+                    }.trim(),
                     status = "PENDING",
                     createdAt = System.currentTimeMillis()
                 )

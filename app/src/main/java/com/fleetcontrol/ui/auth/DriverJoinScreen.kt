@@ -37,19 +37,20 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DriverJoinScreen(
-    onJoinSuccess: (ownerId: String, firestoreDriverId: String, driverName: String) -> Unit,
+    viewModel: com.fleetcontrol.viewmodel.auth.DriverJoinViewModel,
+    onJoinSuccess: () -> Unit,
     onBack: () -> Unit
 ) {
-    val context = LocalContext.current
-    val app = context.applicationContext as FleetControlApplication
-    val inviteCodeManager = remember { InviteCodeManager(app.container.firestore) }
-    val coroutineScope = rememberCoroutineScope()
-    
+    val uiState by viewModel.uiState.collectAsState()
     var code by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var validationResult by remember { mutableStateOf<InviteCodeResult.Valid?>(null) }
     
+    // Side Effect: Navigation on Success
+    LaunchedEffect(uiState) {
+        if (uiState is com.fleetcontrol.viewmodel.auth.DriverJoinUiState.Success) {
+            onJoinSuccess()
+        }
+    }
+
     // Enforce Status Bar (Black + White Icons)
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -59,6 +60,12 @@ fun DriverJoinScreen(
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
+    
+    // Extract State values for UI
+    val isLoading = uiState is com.fleetcontrol.viewmodel.auth.DriverJoinUiState.Loading
+    val loadingMessage = (uiState as? com.fleetcontrol.viewmodel.auth.DriverJoinUiState.Loading)?.message
+    val error = (uiState as? com.fleetcontrol.viewmodel.auth.DriverJoinUiState.Error)?.message
+    val validationResult = (uiState as? com.fleetcontrol.viewmodel.auth.DriverJoinUiState.CodeValid)?.result
     
     Column(
         modifier = Modifier
@@ -116,7 +123,7 @@ fun DriverJoinScreen(
                 onValueChange = { 
                     if (it.length <= 6) {
                         code = it.uppercase()
-                        error = null
+                        if (error != null) viewModel.resetError()
                     }
                 },
                 label = { Text("Invite Code") },
@@ -137,17 +144,26 @@ fun DriverJoinScreen(
                     unfocusedBorderColor = FleetColors.TextTertiary
                 ),
                 shape = RoundedCornerShape(FleetDimens.CornerLarge),
-                isError = error != null
+                isError = error != null,
+                enabled = !isLoading
             )
             
             // Error message
             if (error != null) {
                 Spacer(modifier = Modifier.height(FleetDimens.SpacingSmall))
                 Text(
-                    text = error!!,
+                    text = error,
                     color = FleetColors.Error,
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+            
+            // Loading Indicator
+            if (isLoading) {
+                Spacer(modifier = Modifier.height(FleetDimens.SpacingMedium))
+                CircularProgressIndicator(color = FleetColors.Primary)
+                Spacer(modifier = Modifier.height(FleetDimens.SpacingSmall))
+                Text(text = loadingMessage ?: "Loading...", style = MaterialTheme.typography.bodySmall)
             }
             
             // Validation Success
@@ -175,13 +191,11 @@ fun DriverJoinScreen(
                         )
                         Spacer(modifier = Modifier.width(FleetDimens.SpacingMedium))
                         Column {
-                            validationResult?.let { result ->
                             Text(
-                                text = "Welcome, ${result.driverName}!",
+                                text = "Welcome, ${validationResult.driverName}!",
                                 fontWeight = FontWeight.Bold,
                                 color = FleetColors.TextPrimary
                             )
-                        }
                             Text(
                                 text = "Ready to join this fleet",
                                 color = FleetColors.TextSecondary,
@@ -197,63 +211,10 @@ fun DriverJoinScreen(
             // Validate / Join Button
             Button(
                 onClick = {
-                    coroutineScope.launch {
-                        isLoading = true
-                        error = null
-
-                        val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
-                        if (auth.currentUser == null) {
-                            val ok = app.container.authService.signInAnonymously()
-                            if (!ok) {
-                                error = "Authentication failed. Please retry."
-                                isLoading = false
-                                return@launch
-                            }
-                        }
-                        
-                        when (val result = inviteCodeManager.validateCode(code)) {
-                            is InviteCodeResult.Valid -> {
-                                if (validationResult == null) {
-                                    // First click - show validation success
-                                    validationResult = result
-                                } else {
-                                    // Second click - consume code and join
-                                    val driverUid = auth.currentUser?.uid
-                                    if (driverUid.isNullOrBlank()) {
-                                        error = "No device identity found. Please retry."
-                                        isLoading = false
-                                        return@launch
-                                    }
-
-                                    val normalizedCode = code.uppercase().trim()
-                                    val consumed = inviteCodeManager.consumeCode(normalizedCode, driverUid)
-                                    if (!consumed) {
-                                        error = "Failed to consume invite code. It may have expired or been used."
-                                        isLoading = false
-                                        return@launch
-                                    }
-
-                                    val userCreated = app.container.authService.createDriverUserDocument(
-                                        driverUid = driverUid,
-                                        tenantId = result.ownerId,
-                                        inviteCode = normalizedCode
-                                    )
-                                    if (!userCreated) {
-                                        error = "Failed to join fleet. Please retry."
-                                        isLoading = false
-                                        return@launch
-                                    }
-
-                                    onJoinSuccess(result.ownerId, result.firestoreDriverId, result.driverName)
-                                }
-                            }
-                            is InviteCodeResult.Invalid -> {
-                                error = result.message
-                                validationResult = null
-                            }
-                        }
-                        
-                        isLoading = false
+                    if (validationResult == null) {
+                        viewModel.validateCode(code)
+                    } else {
+                        viewModel.joinFleet(validationResult, code)
                     }
                 },
                 modifier = Modifier
@@ -266,19 +227,11 @@ fun DriverJoinScreen(
                 ),
                 shape = RoundedCornerShape(FleetDimens.CornerLarge)
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(FleetDimens.IconMedium),
-                        color = FleetColors.OnPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(
-                        text = if (validationResult == null) "Validate Code" else "Join Fleet",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = FleetDimens.TextSizeLarge
-                    )
-                }
+                Text(
+                    text = if (validationResult == null) "Validate Code" else "Join Fleet",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = FleetDimens.TextSizeLarge
+                )
             }
             
             Spacer(modifier = Modifier.height(FleetDimens.SpacingMedium))

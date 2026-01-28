@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import kotlinx.coroutines.launch
 import com.fleetcontrol.FleetControlApplication
 import com.fleetcontrol.ui.auth.LoginScreen
 import com.fleetcontrol.ui.auth.OwnerAuthScreen
@@ -99,15 +100,16 @@ fun NavGraph(
     ) {
         // First-launch Onboarding
         composable(Routes.ONBOARDING) {
+            val scope = rememberCoroutineScope()
             com.fleetcontrol.ui.onboarding.OnboardingScreen(
                 onComplete = {
-                    // Mark onboarding as complete
-                    kotlinx.coroutines.runBlocking {
+                    // Mark onboarding as complete (Non-blocking)
+                    scope.launch {
                         appSettings.setFirstLaunchComplete()
-                    }
-                    // Navigate to auth flow
-                    navController.navigate(Routes.OWNER_AUTH) {
-                        popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        // Navigate to auth flow
+                        navController.navigate(Routes.OWNER_AUTH) {
+                            popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        }
                     }
                 }
             )
@@ -133,122 +135,16 @@ fun NavGraph(
         
         // Driver Join (Invite Code Entry)
         composable(Routes.DRIVER_JOIN) {
+            // Use DriverJoinViewModel for logic
+            val driverJoinViewModel: com.fleetcontrol.viewmodel.auth.DriverJoinViewModel = viewModel(
+                factory = com.fleetcontrol.ui.AppViewModelProvider.Factory
+            )
+            
             com.fleetcontrol.ui.auth.DriverJoinScreen(
-                onJoinSuccess = { ownerId, firestoreDriverId, driverName ->
-                    // 1. Set Cloud repo ownerId - needed for all cloud operations
-                    app.container.cloudMasterDataRepository.setOwnerId(ownerId)
-                    app.container.cloudTripRepository.setOwnerId(ownerId)
-                    
-                    // 2. EXPLICIT: Fetch ALL data from Firestore and populate local DB
-                    kotlinx.coroutines.runBlocking {
-                        android.util.Log.d("NavGraph", "=== SYNCING ALL DATA FOR DRIVER ===")
-                        
-                        // 2a. Fetch and insert driver
-                        val cloudDriver = app.container.cloudMasterDataRepository.getDriverByFirestoreId(firestoreDriverId)
-                        val localDriverId: Long
-                        if (cloudDriver != null) {
-                            val localDriver = com.fleetcontrol.data.entities.DriverEntity(
-                                firestoreId = firestoreDriverId,
-                                ownerId = ownerId,
-                                name = cloudDriver.name,
-                                phone = cloudDriver.phone,
-                                pin = cloudDriver.pin,
-                                isActive = cloudDriver.isActive
-                            )
-                            localDriverId = app.container.driverRepository.insertRaw(localDriver)
-                            android.util.Log.d("NavGraph", "Driver synced: ${cloudDriver.name}")
-                        } else {
-                            val fallbackDriver = com.fleetcontrol.data.entities.DriverEntity(
-                                firestoreId = firestoreDriverId,
-                                ownerId = ownerId,
-                                name = driverName,
-                                phone = "",
-                                pin = "",
-                                isActive = true
-                            )
-                            localDriverId = app.container.driverRepository.insertRaw(fallbackDriver)
-                        }
-                        
-                        // 2b. Fetch and insert all COMPANIES
-                        val companies = app.container.cloudMasterDataRepository.getAllCompaniesNow()
-                        android.util.Log.d("NavGraph", "Syncing ${companies.size} companies...")
-                        companies.forEach { fComp ->
-                            val existing = app.container.companyRepository.getCompanyByFirestoreId(fComp.id)
-                            if (existing == null) {
-                                app.container.companyRepository.insertRaw(com.fleetcontrol.data.entities.CompanyEntity(
-                                    firestoreId = fComp.id,
-                                    ownerId = ownerId,
-                                    name = fComp.name,
-                                    contactPerson = fComp.contactPerson,
-                                    contactPhone = fComp.contactPhone,
-                                    perBagRate = fComp.perBagRate,
-                                    isActive = fComp.isActive
-                                ))
-                            }
-                        }
-                        
-                        // 2c. Fetch and insert all CLIENTS
-                        val clients = app.container.cloudMasterDataRepository.getAllClientsNow()
-                        android.util.Log.d("NavGraph", "Syncing ${clients.size} clients...")
-                        clients.forEach { fClient ->
-                            val existing = app.container.clientRepository.getClientByFirestoreId(fClient.id)
-                            if (existing == null) {
-                                app.container.clientRepository.insertRaw(com.fleetcontrol.data.entities.ClientEntity(
-                                    firestoreId = fClient.id,
-                                    ownerId = ownerId,
-                                    name = fClient.name,
-                                    address = fClient.address,
-                                    contactPerson = fClient.contactPerson,
-                                    contactPhone = fClient.contactPhone,
-                                    notes = fClient.notes,
-                                    isActive = fClient.isActive
-                                ))
-                            }
-                        }
-                        
-                        // 2d. Fetch and insert all PICKUP LOCATIONS
-                        val locations = app.container.cloudMasterDataRepository.getAllLocationsNow()
-                        android.util.Log.d("NavGraph", "Syncing ${locations.size} pickup locations...")
-                        locations.forEach { fLoc ->
-                            val existing = app.container.pickupRepository.getLocationByFirestoreId(fLoc.id)
-                            if (existing == null) {
-                                app.container.pickupRepository.insertRaw(com.fleetcontrol.data.entities.PickupLocationEntity(
-                                    firestoreId = fLoc.id,
-                                    ownerId = ownerId,
-                                    name = fLoc.name,
-                                    distanceFromBase = fLoc.distanceFromBase,
-                                    isActive = fLoc.isActive
-                                ))
-                            }
-                        }
-                        
-                        // 2e. Fetch and insert all RATE SLABS
-                        val slabs = app.container.cloudMasterDataRepository.getAllRateSlabsNow()
-                        android.util.Log.d("NavGraph", "Syncing ${slabs.size} rate slabs...")
-                        slabs.forEach { fSlab ->
-                            val existing = app.container.rateSlabRepository.getRateSlabByFirestoreId(fSlab.id)
-                            if (existing == null) {
-                                app.container.rateSlabRepository.insertRaw(com.fleetcontrol.data.entities.DriverRateSlabEntity(
-                                    firestoreId = fSlab.id,
-                                    ownerId = ownerId,
-                                    minDistance = fSlab.minDistance,
-                                    maxDistance = fSlab.maxDistance,
-                                    ratePerBag = fSlab.ratePerBag,
-                                    isActive = fSlab.isActive
-                                ))
-                            }
-                        }
-                        
-                        android.util.Log.d("NavGraph", "=== SYNC COMPLETE ===")
-                        
-                        // 3. Save driver access to settings
-                        appSettings.setDriverAccessGranted(true, localDriverId, ownerId)
-                        
-                        // 4. Set driver session
-                        app.container.sessionManager.setDriverSession(localDriverId, ownerId)
-                    }
-                    
-                    // Navigate to driver home
+                viewModel = driverJoinViewModel,
+                onJoinSuccess = {
+                    // Logic handled in ViewModel, state observation triggers this.
+                    // Just Navigate.
                     navController.navigate(Routes.DRIVER_HOME) {
                         popUpTo(Routes.DRIVER_JOIN) { inclusive = true }
                     }
@@ -425,22 +321,7 @@ fun NavGraph(
             )
         }
 
-        composable(Routes.DRIVER_EARNINGS) {
-            DriverSummaryScreen(
-                viewModel = driverEarningViewModel,
-                onNavigateToTrips = { navController.navigate(Routes.DRIVER_TRIPS) },
-                onNavigateToFuel = { navController.navigate(Routes.DRIVER_FUEL) },
-                onNavigateToHistory = { navController.navigate(Routes.DRIVER_HISTORY) },
-                onNavigateToReports = { navController.navigate(Routes.DRIVER_REPORTS) },
-                onNavigateToBackup = { navController.navigate(Routes.BACKUP) },
-                onLogout = {
-                    loginViewModel.logout()
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.DRIVER_EARNINGS) { inclusive = true }
-                    }
-                }
-            )
-        }
+        // REMOVED duplicate DRIVER_EARNINGS (It pointed to DriverSummaryScreen, same as DRIVER_HOME)
         
         // Settings screens
         composable(Routes.SETTINGS) {

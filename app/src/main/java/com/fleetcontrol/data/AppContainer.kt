@@ -115,6 +115,11 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         )
     }
     
+    // Transaction Manager
+    val transactionManager: com.fleetcontrol.data.database.TransactionManager by lazy {
+        com.fleetcontrol.data.database.TransactionManager(database)
+    }
+
     override val tripRepository: TripRepository by lazy {
         TripRepository(
             database.tripDao(),
@@ -122,7 +127,8 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
             driverRepository,
             companyRepository,
             pickupRepository,
-            syncWorkManager // Injected for robust offline sync
+            syncWorkManager,
+            transactionManager // Injected for Audit + Sync unification
         )
     }
     

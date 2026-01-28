@@ -1,6 +1,7 @@
 package com.fleetcontrol.ui.owner
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -504,13 +505,14 @@ private fun ClientDetailView(
     ) {
         // Clean TopAppBar style header
         Surface(
-            color = Color.White,
-            shadowElevation = 2.dp
+            color = FleetColors.Surface,
+            shadowElevation = 0.dp,
+            border = BorderStroke(1.dp, FleetColors.SurfaceVariant)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                    .padding(horizontal = 8.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
@@ -520,6 +522,7 @@ private fun ClientDetailView(
                         tint = FleetColors.TextPrimary
                     )
                 }
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = client.name,
                     style = MaterialTheme.typography.titleLarge,
@@ -536,7 +539,7 @@ private fun ClientDetailView(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(FleetDimens.CornerLarge),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = FleetColors.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Row(
@@ -605,7 +608,7 @@ private fun ClientDetailView(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -616,14 +619,15 @@ private fun ClientDetailView(
                 color = FleetColors.TextPrimary
             )
             Surface(
-                color = FleetColors.PrimaryLight,
+                color = FleetColors.Black, // High contrast
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     "${distances.size} configured",
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
-                    color = FleetColors.Primary
+                    color = FleetColors.White, // Visible
+                    fontWeight = FontWeight.Bold
                 )
             }
         }

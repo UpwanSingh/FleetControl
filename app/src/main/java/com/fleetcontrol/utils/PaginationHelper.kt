@@ -249,8 +249,8 @@ abstract class RoomPaginatedDao<T> {
             override suspend fun getPage(page: Int, pageSize: Int): PaginatedData<T> {
                 val offset = page * pageSize
                 val items = getItemsPaged(offset, pageSize)
-                val totalCount = getTotalCount()
-                val hasMore = offset + items.size < (totalCount as Int)
+                val totalCount = this@RoomPaginatedDao.getTotalCount()
+                val hasMore = offset + items.size < totalCount
                 
                 return PaginatedData(
                     items = items,
@@ -263,8 +263,8 @@ abstract class RoomPaginatedDao<T> {
             
             override fun getTotalCount(): Flow<Int?> {
                 return kotlinx.coroutines.flow.flow {
-                    val totalCount = getTotalCount()
-                    emit(totalCount as Int?)
+                    val totalCount = this@RoomPaginatedDao.getTotalCount()
+                    emit(totalCount)
                 }
             }
         }

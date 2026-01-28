@@ -149,9 +149,16 @@ fun OwnerAuthScreen(
                         modifier = Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val err = error ?: ""
+                        val icon = if (err.contains("connection", ignoreCase = true) || err.contains("network", ignoreCase = true)) {
+                            Icons.Default.WifiOff
+                        } else {
+                            Icons.Default.Error
+                        }
+                        
                         Icon(
-                            Icons.Default.Error,
-                            contentDescription = "Error: Invalid input",
+                            icon,
+                            contentDescription = "Error",
                             tint = FleetColors.Error
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -290,7 +297,13 @@ fun OwnerAuthScreen(
                         result.onSuccess {
                             onAuthSuccess()
                         }.onFailure { e ->
-                            error = e.message ?: "Authentication failed"
+                            // Polish: Show friendly message for network errors
+                            val msg = e.message ?: ""
+                            error = if (msg.contains("network", ignoreCase = true) || msg.contains("connection", ignoreCase = true)) {
+                                "Check internet connection"
+                            } else {
+                                msg.ifEmpty { "Authentication failed" }
+                            }
                             isLoading = false
                         }
                     }

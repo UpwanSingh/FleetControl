@@ -128,29 +128,20 @@ open class DriverRepository(
         val driverWithOwner = driver.copy(ownerId = cloudRepo.currentOwnerId)
         val id = driverDao.insert(driverWithOwner)
         
-        // Push to Cloud with retry
+        // Push to Cloud with retry (Fire-and-forget, ID is safe)
         scope.launch {
             val fDriver = FirestoreDriver(
-                id = driverWithOwner.firestoreId ?: "", // Empty means create new
+                id = driverWithOwner.firestoreId, // Guaranteed non-null UUID
                 name = driverWithOwner.name,
                 phone = driverWithOwner.phone,
                 pin = driverWithOwner.pin,
                 isActive = driverWithOwner.isActive
             )
             
-            val cloudId = com.fleetcontrol.data.sync.CloudSyncHelper.pushWithRetry(
+            com.fleetcontrol.data.sync.CloudSyncHelper.pushWithRetry(
                 operationName = "addDriver",
                 operation = { cloudRepo.addDriver(fDriver) }
             )
-            
-            // If we just created it, update local with new ID
-            if (cloudId != null && driverWithOwner.firestoreId == null) {
-                val insertedDriver = driverDao.getDriverById(id)
-                if (insertedDriver != null) {
-                    driverDao.update(insertedDriver.copy(firestoreId = cloudId))
-                    Log.d("DriverRepository", "Driver synced to cloud with ID: $cloudId")
-                }
-            }
         }
         return id
     }
@@ -161,25 +152,17 @@ open class DriverRepository(
         // Push to Cloud with retry
         scope.launch {
             val fDriver = FirestoreDriver(
-                id = driver.firestoreId ?: "",
+                id = driver.firestoreId, // Guaranteed non-null
                 name = driver.name,
                 phone = driver.phone,
                 pin = driver.pin,
                 isActive = driver.isActive
             )
             
-            val cloudId = com.fleetcontrol.data.sync.CloudSyncHelper.pushWithRetry(
+            com.fleetcontrol.data.sync.CloudSyncHelper.pushWithRetry(
                 operationName = "updateDriver",
                 operation = { cloudRepo.addDriver(fDriver) }
             )
-            
-            // If it was missing ID, update local
-            if (cloudId != null && driver.firestoreId == null) {
-                val current = driverDao.getDriverById(driver.id)
-                if (current != null) {
-                    driverDao.update(current.copy(firestoreId = cloudId))
-                }
-            }
         }
     }
     

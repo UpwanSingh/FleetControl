@@ -29,7 +29,7 @@ class OwnerProfitCalculatorTest {
         val grossRevenue = 10000.0
         
         // When
-        val margin = if (grossRevenue > 0) (netProfit / grossRevenue) * 100 else 0.0
+        val margin = if (grossRevenue > 0.0) (netProfit / grossRevenue) * 100 else 0.0
         
         // Then
         assertEquals(50.0, margin, 0.01)
@@ -42,7 +42,7 @@ class OwnerProfitCalculatorTest {
         val grossRevenue = 0.0
         
         // When
-        val margin = if (grossRevenue > 0) (netProfit / grossRevenue) * 100 else 0.0
+        val margin = if (grossRevenue > 0.0) (netProfit / grossRevenue) * 100 else 0.0
         
         // Then
         assertEquals(0.0, margin, 0.01)
